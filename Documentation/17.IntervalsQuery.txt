@@ -1,2 +1,84 @@
 Intervals Query
 
+Returns documents based on the order and proximity of matching terms.
+
+The intervals query uses matching rules, constructed from a small set of definitions. These rules are then applied to terms from a specified field.
+
+Example Request:
+The following "intervals" search returns documents containing "my
+favorite food" without any gap, followed by "hot water" or "cold porridge" in the "my_text" field.
+
+This search would match a "my_text" value of "my favorite food is cold
+porridge" but not "when it's cold my favorite food is porridge".
+POST _search
+{
+  "query": {
+    "intervals" : {
+      "my_text" : {
+        "all_of" : {
+          "ordered" : true,
+          "intervals" : [
+            {
+              "match" : {
+                "query" : "my favorite food",
+                "max_gaps" : 0,
+                "ordered" : true
+              }
+            },
+            {
+              "any_of" : {
+                "intervals" : [
+                  { "match" : { "query" : "hot water" } },
+                  { "match" : { "query" : "cold porridge" } }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+Here, we have intervals query.
+then we go search inside "my_text" field.
+Then, we have "all_of" clause, which signifies we are searching in the whole value of "my_text" field.
+
+ordered -> true -> that means the intervals and their matchings should be in order.
+We then define array of intervals, where run our queries.
+Here, we define one match query and, where we search for a query , "my favorite food" without any gaps.
+Then we have another interval defined.
+This interval is of type, any_of, and then again we have set of intervals:
+They have a match query query which match either hot water or cold porridge.
+
+Top Level parameters of intervals:
+"<FIELD>":
+Field you wish to search.
+
+Valid rules include:
+- match
+- prefix
+- wildcard
+- fuzzy
+- all_of
+- any_of
+
+
+Match Rules Parameters:
+The match rule matches analyzed text.
+query : (Required, string) Text you wish to find in the provided <field>.
+
+max_gaps: (Optional, integer) Maximum number of positions between the matching terms. Terms further apart than this are not considered matches. Defaults to -1.
+If unspecified or set to -1, there is no width restriction on the match. If set to 0, the terms must appear next to each other.
+
+ordered: (Optional, Boolean) If true, matching terms must appear in their specified order. Defaults to false.
+
+analyzer: (Optional, string) analyzer used to analyze terms in the query. Defaults to the top-level <field>'s analyzer.
+
+filter : (Optional, interval filter rule object) An optional interval filter.
+
+use_field: 
+(Optional, string) If specified, then match intervals from this field rather than the top-level <field>. 
+Terms are analyzed using the search analyzer from this field. 
+This allows you to search across multiple fields as if they were all the same field; 
+for example, you could index the same text into stemmed and unstemmed fields, and search for stemmed tokens near unstemmed ones.
+
