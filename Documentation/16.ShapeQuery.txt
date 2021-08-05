@@ -1,0 +1,127 @@
+Shape Queries
+
+Elasticsearch supports two types of cartesian data: point fields which support x/y pairs, 
+and shape fields, which support points, lines, circles, polygons, multi-polygons, etc.
+
+The queries in this group are:
+
+shape query
+    Finds documents with:
+        shapes which either intersect, are contained by, are within or do not intersect with the specified shape
+        points which intersect the specified shape
+
+Queries documents that contain fields indexed using the shape type.
+Requires shape mapping.
+
+The query supports two ways of defining the target shape, either by providing a whole shape definition, 
+or by referencing the name, or id, of a shape pre-indexed in another index. Both formats are defined below with examples.
+
+
+Inline Shape Definition:
+Similar to the geo_shape query, the shape query uses GeoJSON or Well Known Text (WKT) to represent shapes.
+
+Create index:
+PUT /example
+{
+  "mappings": {
+    "properties": {
+      "geometry": {
+        "type": "shape"
+      }
+    }
+  }
+}
+
+put document inside it:
+PUT /example/_doc/1?refresh=wait_for
+{
+  "name": "Lucky Landing",
+  "geometry": {
+    "type": "point",
+    "coordinates": [ 1355.400544, 5255.530286 ]
+  }
+}
+
+The following query will find the point using the Elasticsearch’s envelope GeoJSON extension:
+GET /example/_search
+{
+  "query": {
+    "shape": {
+      "geometry": {
+        "shape": {
+          "type": "envelope",
+          "coordinates": [ [ 1355.0, 5355.0 ], [ 1400.0, 5200.0 ] ]
+        },
+        "relation": "within"
+      }
+    }
+  }
+}
+Here, we have a shape query on "geometry" field.
+Then we provide an envelope shape, and see if any documents lie within the given shape.
+
+
+Pre indexed Shape:
+The Query also supports using a shape which has already been indexed in another index. 
+This is particularly useful for when you have a pre-defined list of shapes which are useful to your application and you want to reference 
+this using a logical name (for example New Zealand) rather than having to provide their coordinates each time. 
+In this situation it is only necessary to provide:
+
+id - The ID of the document that containing the pre-indexed shape.
+index - Name of the index where the pre-indexed shape is. Defaults to shapes.
+path - The field specified as path containing the pre-indexed shape. Defaults to shape.
+routing - The routing of the shape document if required.
+
+The following is an example of using the Filter with a pre-indexed shape:
+Create index:
+PUT /shapes
+{
+  "mappings": {
+    "properties": {
+      "geometry": {
+        "type": "shape"
+      }
+    }
+  }
+}
+
+Put doc
+PUT /shapes/_doc/footprint
+{
+  "geometry": {
+    "type": "envelope",
+    "coordinates": [ [ 1355.0, 5355.0 ], [ 1400.0, 5200.0 ] ]
+  }
+}
+
+Searched using preindexded document value
+GET /example/_search
+{
+  "query": {
+    "shape": {
+      "geometry": {
+        "indexed_shape": {
+          "index": "shapes",
+          "id": "footprint",
+          "path": "geometry"
+        }
+      }
+    }
+  }
+}
+
+
+Spatial Relations:
+The following is a complete list of spatial relation operators available:
+
+INTERSECTS - (default) Return all documents whose shape field intersects the query geometry.
+DISJOINT - Return all documents whose shape field has nothing in common with the query geometry.
+WITHIN - Return all documents whose shape field is within the query geometry.
+CONTAINS - Return all documents whose shape field contains the query geometry.
+
+
+Ignore Unmapped.
+When set to true the ignore_unmapped option will ignore an unmapped field and will not match any documents for this query. 
+This can be useful when querying multiple indexes which might have different mappings. 
+When set to false (the default value) the query will throw an exception if the field is not mapped.
+

@@ -1,0 +1,16 @@
+Geo Queries 
+Elasticsearch supports two types of geo data: geo_point fields which support lat/lon pairs, 
+and geo_shape fields, which support points, lines, circles, polygons, multi-polygons, etc.
+
+The queries in this group are:
+
+geo_bounding_box query: Finds documents with geopoints that fall into the specified rectangle.
+
+geo_distance query: Finds documents with geopoints within the specified distance of a central point.
+
+geo_polygon query: Find documents with geopoints within the specified polygon.
+
+geo_shape query: 
+    Finds documents with:
+        Geoshapes which either intersect, are contained by, or do not intersect with the specified geoshape
+        Geopoints which intersect the specified geoshape
