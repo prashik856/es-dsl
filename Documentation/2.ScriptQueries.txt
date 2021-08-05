@@ -1,0 +1,89 @@
+SCRIPT QUERIES
+
+Example of Script queries?
+Filters documents based on a provided script. The script query is typically used in a filter context.
+GET /_search
+{
+  "query": {
+    "bool": {
+      "filter": {
+        "script": {
+          "script": """
+            double amount = doc['amount'].value;
+            if (doc['type'].value == 'expense') {
+              amount *= -1;
+            }
+            return amount < 10;
+          """
+        }
+      }
+    }
+  }
+}
+-> We give a query, which uses bool inside.
+Inside bool, we remember we can use must, must_not, filter, etc.
+here, we are using filter.
+Inside the filter, we want to find the particular script.
+That script is given inside "script" context.
+Inside the "script" context, we provide the actual script that we want to search.
+
+We can also use runtime queries to get the same result:
+GET /_search
+{
+  "runtime_mappings": {
+    "amount.signed": {
+      "type": "double",
+      "script": """
+        double amount = doc['amount'].value;
+        if (doc['type'].value == 'expense') {
+          amount *= -1;
+        }
+        emit(amount);
+      """
+    }
+  },
+  "query": {
+    "bool": {
+      "filter": {
+        "range": {
+          "amount.signed": { "lt": 10 }
+        }
+      }
+    }
+  },
+  "fields": [{"field": "amount.signed"}]
+}
+What do we have here?
+We know our query, right?
+We are using bool context, and a filter context inside it.
+In the filter context, we want to find all the documents with "range" context
+We want to find all documents where the value of field "amount.signed" is less than 10.
+
+I am looking at the "runtime_mappings" the first time?
+We have "runtime_mappings" context, where we are mapping the field "amount.signed".
+We are setting it's type to double.
+Then, we also have a script filed wholse value is defined by us?
+
+At the end, we have "fields" context, an array, 
+where we can provide various field values.
+here, we are giving the field value as "amound.signed". (look for a document with a field "amount.signed" in it.)
+
+Scripts are cached for faster execution.
+GET /_search
+{
+  "query": {
+    "bool": {
+      "filter": {
+        "script": {
+          "script": {
+            "source": "doc['num1'].value > params.param1",
+            "lang": "painless",
+            "params": {
+              "param1": 5
+            }
+          }
+        }
+      }
+    }
+  }
+}

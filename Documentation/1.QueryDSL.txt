@@ -1,0 +1,33 @@
+Query DSL
+
+Leaf query clauses
+Leaf query clauses look for a particular value in a particular field, such as the match, term or range queries. These queries can be used by themselves.
+
+Compound Query Clauses:
+Compound query clauses wrap other leaf or compound queries and are used to combine multiple queries in a logical 
+fashion (such as the bool or dis_max query), or to alter their behaviour (such as the constant_score query).
+
+"query" context or "filter" context.
+
+
+Allow Expensive Queries:
+What the type of queries that are expensive?
+1. Queries that need to do linear scans to identify matches:
+Example: 
+script queries:
+Look at 2.ScriptQueries.txt file.
+
+2. Queries that have a high up-front cost:
+fuzzy queries 
+regexp queries 
+prefix queries 
+wildcard queries 
+range queries on text and keyword values  -> That means we should run range queries on int or double type fields.
+
+3. Joining Queries 
+
+4. Queries on deprecated geo shapes.
+
+5. Queries that may have a high per-document cost:
+script_scores queries 
+percolate queries 

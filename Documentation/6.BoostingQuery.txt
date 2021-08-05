@@ -1,0 +1,39 @@
+Boosting Query:
+Returns documents matching a positive query while reducing the relevance score of documents that also match a negative query.
+
+You can use the boosting query to demote certain documents without excluding them from the search results.
+
+GET /_search
+{
+  "query": {
+    "boosting": {
+      "positive": {
+        "term": {
+          "text": "apple"
+        }
+      },
+      "negative": {
+        "term": {
+          "text": "pie tart fruit crumble tree"
+        }
+      },
+      "negative_boost": 0.5
+    }
+  }
+}
+
+Top Level parameter for boosting query:
+positive:
+Query you wish to run. Any returned documents must match this query.
+"positive" clause contains the query which we need to run (here, we have a "term" query.)
+
+negative:
+Query used to decrease the relevance score of matching documents.
+Similaryly, we have a "negative" clause which requires a query inside them.
+
+If a returned document matches the positive query and this query, the boosting query calculates the final relevance score for the document as follows:
+Take the original relevance score from the positive query.
+Multiply the score by the negative_boost value.
+
+negative_boost:
+ Floating point number between 0 and 1.0 used to decrease the relevance scores of documents matching the negative query.
