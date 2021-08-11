@@ -35,3 +35,4 @@ If a document matches multiple clauses, the dis_max query calculates the relevan
 -> Add the highest score to the multiplied scores.
 
 If the tie_breaker value is greater than 0.0, all matching clauses count, but the clause with the highest score counts most.
+

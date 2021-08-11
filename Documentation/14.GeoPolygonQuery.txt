@@ -6,6 +6,8 @@ Deprecated in 7.12.
 Use Geoshape instead where polygons are defined in GeoJSON or Well-Known Text (WKT).
 
 A query returning hits that only fall within a polygon of points. Here is an example:
+geo_point
+geo_shape
 GET /_search
 {
   "query": {
@@ -98,6 +100,7 @@ GET /_search
       "must": {
         "match_all": {}
       },
+
       "filter": {
         "geo_polygon": {
           "person.location": {
@@ -109,6 +112,7 @@ GET /_search
           }
         }
       }
+      
     }
   }
 }

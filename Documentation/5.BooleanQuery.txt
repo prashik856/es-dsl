@@ -28,21 +28,26 @@ POST _search
 {
   "query": {
     "bool" : {
+
       "must" : {
         "term" : { "user.id" : "kimchy" }
       },
+
       "filter": {
         "term" : { "tags" : "production" }
       },
+
       "must_not" : {
         "range" : {
           "age" : { "gte" : 10, "lte" : 20 }
         }
       },
+
       "should" : [
         { "term" : { "tags" : "env1" } },
         { "term" : { "tags" : "deployed" } }
       ],
+
       "minimum_should_match" : 1,
       "boost" : 1.0
     }
@@ -128,7 +133,7 @@ Each query accepts a _name in its top level definition.
 You can use named queries to track which queries matched returned documents. 
 If named queries are used, the response includes a matched_queries property for each hit.
 This means, we can give names to our queries :)
-GET /_search
+GET /<index>/_search
 {
   "query": {
     "bool": {
@@ -159,6 +164,7 @@ GET /_search
     }
   }
 }
+
 I belive this is what it means, 
 -> We have query clause, then we have a bool clause. 
 -> We have 1 should and 1 filter clause inside bool clause.

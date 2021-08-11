@@ -1,0 +1,352 @@
+Composite Aggregation:
+A multi-bucket aggregation that creates composite buckets from different sources.
+
+Unlike the other multi-bucket aggregations, you can use the composite aggregation to paginate all buckets from a multi-level aggregation efficiently. 
+This aggregation provides a way to stream all buckets of a specific aggregation, similar to what scroll does for documents.
+
+The composite buckets are built from the combinations of the values extracted/created for each document and each combination is considered as a composite bucket.
+For example, consider the following document:
+{
+  "keyword": ["foo", "bar"],
+  "number": [23, 65, 76]
+}
+
+{ "keyword": "foo", "number": 23 }
+{ "keyword": "foo", "number": 65 }
+{ "keyword": "foo", "number": 76 }
+{ "keyword": "bar", "number": 23 }
+{ "keyword": "bar", "number": 65 }
+{ "keyword": "bar", "number": 76 }
+
+
+Value Sources:
+The sources parameter defines the source fields to use when building composite buckets. 
+The order that the sources are defined controls the order that the keys are returned.
+
+You must use a unique name when defining sources.
+
+The sources parameter can be any of the following types:
+Terms
+Histogram
+Date histogram
+GeoTile grid
+
+1. Terms:
+The terms value source is equivalent to a simple terms aggregation. The values are extracted from a field exactly like the terms aggregation.
+GET /_search
+{
+  "size": 0,
+  "aggs": {
+    "my_buckets": {
+      "composite": {
+        "sources": [
+          { "product": { "terms": { "field": "product" } } }
+        ]
+      }
+    }
+  }
+}
+Here, "my_buckets" is user defined agg, and "product" is also user defined source.
+
+
+Like the terms aggregation, it’s possible to use a runtime field to create values for the composite buckets:
+GET /_search
+{
+  "runtime_mappings": {
+    "day_of_week": {
+      "type": "keyword",
+      "script": """
+        emit(doc['timestamp'].value.dayOfWeekEnum
+          .getDisplayName(TextStyle.FULL, Locale.ROOT))
+      """
+    }
+  },
+  "size": 0,
+  "aggs": {
+    "my_buckets": {
+      "composite": {
+        "sources": [
+          {
+            "dow": {
+              "terms": { "field": "day_of_week" }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+
+
+2. Histogram:
+The histogram value source can be applied on numeric values to build fixed size interval over the values.
+The interval parameter defines how the numeric values should be transformed. 
+For instance an interval set to 5 will translate any numeric values to its closest interval, 
+a value of 101 would be translated to 100 which is the key for the interval between 100 and 105.
+Example:
+GET /_search
+{
+  "size": 0,
+  "aggs": {
+    "my_buckets": {
+      "composite": {
+        "sources": [
+          { "histo": { 
+              "histogram": { 
+                  "field": "price", 
+                  "interval": 5 } 
+                  } 
+            }
+        ]
+      }
+    }
+  }
+}
+
+Like the histogram aggregation it’s possible to use a runtime field to create values for the composite buckets:
+GET /_search
+{
+  "runtime_mappings": {
+    "price.discounted": {
+      "type": "double",
+      "script": """
+        double price = doc['price'].value;
+        if (doc['product'].value == 'mad max') {
+          price *= 0.8;
+        }
+        emit(price);
+      """
+    }
+  },
+  "size": 0,
+  "aggs": {
+    "my_buckets": {
+      "composite": {
+        "sources": [
+          {
+            "price": {
+              "histogram": {
+                "interval": 5,
+                "field": "price.discounted"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+
+
+3. Date Histogram:
+The date_histogram is similar to the histogram value source except that the interval is specified by date/time expression:
+GET /_search
+{
+  "size": 0,
+  "aggs": {
+    "my_buckets": {
+      "composite": {
+        "sources": [
+          { "date": { "date_histogram": { "field": "timestamp", "calendar_interval": "1d" } } }
+        ]
+      }
+    }
+  }
+}
+
+The example above creates an interval per day and translates all timestamp values to the start of its closest intervals. 
+Available expressions for interval: year, quarter, month, week, day, hour, minute, second
+
+Format:
+Internally, a date is represented as a 64 bit number representing a timestamp in milliseconds-since-the-epoch. 
+These timestamps are returned as the bucket keys. 
+It is possible to return a formatted date string instead using the format specified with the format parameter:
+GET /_search
+{
+  "size": 0,
+  "aggs": {
+    "my_buckets": {
+      "composite": {
+        "sources": [
+          {
+            "date": {
+              "date_histogram": {
+                "field": "timestamp",
+                "calendar_interval": "1d",
+                "format": "yyyy-MM-dd"         //here
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+
+Time Zones
+
+Offset
+
+4.GeoTile:
+The geotile_grid value source works on geo_point fields and groups points into buckets that represent cells in a grid. 
+The resulting grid can be sparse and only contains cells that have matching data. 
+Each cell corresponds to a map tile as used by many online map sites. Each cell is labeled using a "{zoom}/{x}/{y}" format, 
+where zoom is equal to the user-specified precision.
+
+GET /_search
+{
+  "size": 0,
+  "aggs": {
+    "my_buckets": {
+      "composite": {
+        "sources": [
+          { "tile": { 
+              "geotile_grid": { 
+                  "field": "location", 
+                  "precision": 8 
+                  } 
+                } 
+            }
+        ]
+      }
+    }
+  }
+}
+
+Precision
+The highest-precision geotile of length 29 produces cells that cover less than 10cm by 10cm of land. 
+This precision is uniquely suited for composite aggregations as each tile does not have to be generated and loaded in memory.
+See Zoom level documentation on how precision (zoom) correlates to size on the ground. Precision for this aggregation can be between 0 and 29, inclusive.
+
+
+Bounding Box Filtering:
+The geotile source can optionally be constrained to a specific geo bounding box, which reduces the range of tiles used.
+These bounds are useful when only a specific part of a geographical area needs high precision tiling.
+GET /_search
+{
+  "size": 0,
+  "aggs": {
+    "my_buckets": {
+      "composite": {
+        "sources": [
+          {
+            "tile": {
+              "geotile_grid": {
+                "field": "location",
+                "precision": 22,
+                "bounds": {
+                  "top_left": "52.4, 4.9",
+                  "bottom_right": "52.3, 5.0"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+
+Mixing Different Value sources:
+The sources parameter accepts an array of value sources. It is possible to mix different value sources to create composite buckets. For example:
+GET /_search
+{
+  "size": 0,
+  "aggs": {
+    "my_buckets": {
+      "composite": {
+        "sources": [
+          { "date": { "date_histogram": { "field": "timestamp", "calendar_interval": "1d" } } },
+          { "product": { "terms": { "field": "product" } } }
+        ]
+      }
+    }
+  }
+}
+
+
+This will create composite buckets from the values created by two value sources, a date_histogram and a terms. 
+Each bucket is composed of two values, one for each value source defined in the aggregation. 
+Any type of combinations is allowed and the order in the array is preserved in the composite buckets.
+GET /_search
+{
+  "size": 0,
+  "aggs": {
+    "my_buckets": {
+      "composite": {
+        "sources": [
+          { "shop": { "terms": { "field": "shop" } } },
+          { "product": { "terms": { "field": "product" } } },
+          { "date": { "date_histogram": { "field": "timestamp", "calendar_interval": "1d" } } }
+        ]
+      }
+    }
+  }
+}
+
+
+Order:
+By default the composite buckets are sorted by their natural ordering. 
+Values are sorted in ascending order of their values. 
+When multiple value sources are requested, the ordering is done per value source, the first value of the composite bucket is compared to 
+the first value of the other composite bucket and if they are equals the next values in the composite bucket are used for tie-breaking. 
+This means that the composite bucket [foo, 100] is considered smaller than [foobar, 0] because foo is considered smaller than foobar. 
+It is possible to define the direction of the sort for each value source by setting order to asc (default value) or desc (descending order) 
+directly in the value source definition.
+GET /_search
+{
+  "size": 0,
+  "aggs": {
+    "my_buckets": {
+      "composite": {
+        "sources": [
+          { "date": { "date_histogram": { "field": "timestamp", "calendar_interval": "1d", "order": "desc" } } },
+          { "product": { "terms": { "field": "product", "order": "asc" } } }
+        ]
+      }
+    }
+  }
+}
+
+
+this will sort the composite bucket in descending order when comparing values from the date_histogram source and in ascending 
+order when comparing values from the terms source.
+
+
+Missing Bucket:
+It is possible to include them in the response by setting missing_bucket to true (defaults to false):
+GET /_search
+{
+  "size": 0,
+  "aggs": {
+    "my_buckets": {
+      "composite": {
+        "sources": [
+          { "product_name": { "terms": { "field": "product", "missing_bucket": true } } }
+        ]
+      }
+    }
+  }
+}
+
+
+Size:
+
+
+Pagination:
+GET /_search
+{
+  "size": 0,
+  "aggs": {
+    "my_buckets": {
+      "composite": {
+        "size": 2,
+        "sources": [
+          { "date": { "date_histogram": { "field": "timestamp", "calendar_interval": "1d" } } },
+          { "product": { "terms": { "field": "product" } } }
+        ]
+      }
+    }
+  }
+}
+

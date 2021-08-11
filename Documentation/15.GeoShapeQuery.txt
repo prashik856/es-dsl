@@ -34,6 +34,7 @@ POST /example/_doc?refresh
     "coordinates": [ 13.400544, 52.530286 ]
   }
 }
+
 Here, when defining geo_shape, we have given the type, and coordinates.
 
 
@@ -45,20 +46,26 @@ GET /example/_search
       "must": {
         "match_all": {}
       },
+
       "filter": {
         "geo_shape": {
           "location": {
             "shape": {
               "type": "envelope",
-              "coordinates": [ [ 13.0, 53.0 ], [ 14.0, 52.0 ] ]
+              "coordinates": [ 
+                  [ 13.0, 53.0 ], 
+                  [ 14.0, 52.0 ] 
+                ]
             },
             "relation": "within"
           }
         }
       }
+
     }
   }
 }
+
 Here, we have type is envelope? (rectangle?)
 
 
@@ -156,6 +163,7 @@ GET /example/_search
               "path": "location"
             }
           }
+          "relation" : 
         }
       }
     }
@@ -166,6 +174,9 @@ GET /example/_search
 Spatial Relations:
 The geo_shape strategy mapping parameter determines which spatial relation operators may be used at search time.
 The following is a complete list of spatial relation operators available when searching a geo field:
+
+
+
 INTERSECTS - (default) Return all documents whose geo_shape or geo_point field intersects the query geometry.
 DISJOINT - Return all documents whose geo_shape or geo_point field has nothing in common with the query geometry.
 WITHIN - Return all documents whose geo_shape or geo_point field is within the query geometry. Line geometries are not supported.

@@ -85,6 +85,7 @@ GET my_locations/_search
       },
 
       "filter": {
+
         "geo_bounding_box": {
           
           "pin.location": {
@@ -96,7 +97,9 @@ GET my_locations/_search
               "lat": 40.01,
               "lon": -71.12
             }
-          }
+          },
+
+          "relation": ""
 
         }
       }
@@ -104,10 +107,13 @@ GET my_locations/_search
     }
   }
 }
+
+
 We match all documents, and use filter for the documents.
 Here, in the filter, we use geo_bounding_box clause, and provide pin.location values.
 We provide top_left value, and bottom_right values.
 
+document -> geo_shape.
 Use the same filter to match geo_shape values that intersect the bounding box:
 GET my_geoshapes/_search
 {
@@ -265,7 +271,7 @@ GET my_locations/_search
 }
 
 
-Geohashedit
+Geohash
 GET my_locations/_search
 {
   "query": {
@@ -336,5 +342,3 @@ Ingonre Unmapped:
 When set to true the ignore_unmapped option will ignore an unmapped field and will not match any documents for this query. 
 This can be useful when querying multiple indexes which might have different mappings. 
 When set to false (the default value) the query will throw an exception if the field is not mapped.
-
-

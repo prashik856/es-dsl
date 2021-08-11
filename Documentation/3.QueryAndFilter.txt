@@ -36,10 +36,12 @@ GET /_search
 {
   "query": { 
     "bool": { 
+      -> return documents with a score
       "must": [
         { "match": { "title":   "Search"        }},
         { "match": { "content": "Elasticsearch" }}
       ],
+      -> return documents with 0 score 
       "filter": [ 
         { "term":  { "status": "published" }},
         { "range": { "publish_date": { "gte": "2015-01-01" }}}
@@ -47,6 +49,7 @@ GET /_search
     }
   }
 }
+
 The query parameter indicates query context.
 inside "bool" context, we have "must" clause. 
 Inside clause, we have "match" clause. 
