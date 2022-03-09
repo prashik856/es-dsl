@@ -34,10 +34,12 @@ GET /_search
           "random_score": {}, 
           "weight": 23
         },
+
         {
           "filter": { "match": { "test": "cat" } },
           "weight": 42
         }
+        
       ],
       
       "max_boost": 42,

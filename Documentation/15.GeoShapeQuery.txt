@@ -128,7 +128,7 @@ routing - The routing of the shape document if required.
 
 The following is an example of using the Filter with a pre-indexed shape:
 Creating an index with a name of shape.
-PUT /shapes
+PUT <index>,<>,<>/shapes
 {
   "mappings": {
     "properties": {
@@ -154,18 +154,22 @@ GET /example/_search
 {
   "query": {
     "bool": {
+
       "filter": {
         "geo_shape": {
           "location": {
+
             "indexed_shape": {
               "index": "shapes",
               "id": "deu",
               "path": "location"
             }
+            
           }
           "relation" : 
         }
       }
+
     }
   }
 }
